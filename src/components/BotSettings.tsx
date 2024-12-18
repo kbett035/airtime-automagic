@@ -64,9 +64,9 @@ const BotSettings = () => {
   if (isLoading) return <div>Loading settings...</div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="flex items-center justify-between">
-        <Label htmlFor="bot-status">Bot Status</Label>
+        <Label htmlFor="bot-status" className="text-sm md:text-base">Bot Status</Label>
         <Switch
           id="bot-status"
           checked={settings?.is_enabled}
@@ -74,12 +74,13 @@ const BotSettings = () => {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="ussd-format">USSD Format</Label>
+        <Label htmlFor="ussd-format" className="text-sm md:text-base">USSD Format</Label>
         <Input
           id="ussd-format"
           value={settings?.ussd_format}
           onChange={(e) => updateSettings.mutate({ ussd_format: e.target.value })}
           placeholder="Enter USSD format e.g. *544*4*6*{phone}#"
+          className="font-mono text-sm"
         />
       </div>
     </div>

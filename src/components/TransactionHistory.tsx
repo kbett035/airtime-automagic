@@ -26,22 +26,22 @@ const TransactionHistory = () => {
   });
 
   return (
-    <div className="relative overflow-x-auto">
+    <div className="relative overflow-x-auto -mx-6 md:mx-0">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Amount</TableHead>
+            <TableHead className="w-24">Amount</TableHead>
             <TableHead>Phone</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Date</TableHead>
+            <TableHead className="hidden md:table-cell">Status</TableHead>
+            <TableHead className="w-24">Date</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {transactions?.map((tx) => (
             <TableRow key={tx.id}>
               <TableCell>{tx.amount}</TableCell>
-              <TableCell>{tx.sender_phone}</TableCell>
-              <TableCell>{tx.status}</TableCell>
+              <TableCell className="font-mono text-sm">{tx.sender_phone}</TableCell>
+              <TableCell className="hidden md:table-cell">{tx.status}</TableCell>
               <TableCell>{new Date(tx.created_at).toLocaleDateString()}</TableCell>
             </TableRow>
           ))}

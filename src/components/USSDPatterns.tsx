@@ -39,10 +39,10 @@ interface NewPattern {
 const USSDPatterns = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [newPattern, setNewPattern] = useState<NewPattern>({ 
-    pattern: "", 
-    amount: "", 
-    pattern_type: "regex" 
+  const [newPattern, setNewPattern] = useState<NewPattern>({
+    pattern: "",
+    amount: "",
+    pattern_type: "regex",
   });
 
   const { data: patterns, isLoading } = useQuery({
@@ -118,8 +118,8 @@ const USSDPatterns = () => {
 
   return (
     <div className="space-y-4">
-      <form onSubmit={handleSubmit} className="flex gap-4 items-end">
-        <div className="space-y-2">
+      <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4">
+        <div className="space-y-2 flex-1">
           <label className="text-sm font-medium">Pattern</label>
           <Input
             value={newPattern.pattern}
@@ -129,7 +129,7 @@ const USSDPatterns = () => {
             placeholder="Enter pattern"
           />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 w-full md:w-32">
           <label className="text-sm font-medium">Amount</label>
           <Input
             type="number"
@@ -137,10 +137,10 @@ const USSDPatterns = () => {
             onChange={(e) =>
               setNewPattern((prev) => ({ ...prev, amount: e.target.value }))
             }
-            placeholder="Enter amount"
+            placeholder="Amount"
           />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 w-full md:w-40">
           <label className="text-sm font-medium">Type</label>
           <Select
             value={newPattern.pattern_type}
@@ -157,40 +157,44 @@ const USSDPatterns = () => {
             </SelectContent>
           </Select>
         </div>
-        <Button type="submit">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Pattern
-        </Button>
+        <div className="flex items-end">
+          <Button type="submit" className="w-full md:w-auto">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Pattern
+          </Button>
+        </div>
       </form>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Pattern</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Amount</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {patterns?.map((pattern) => (
-            <TableRow key={pattern.id}>
-              <TableCell>{pattern.pattern}</TableCell>
-              <TableCell>{pattern.pattern_type}</TableCell>
-              <TableCell>{pattern.amount}</TableCell>
-              <TableCell>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => deletePattern.mutate(pattern.id)}
-                >
-                  <Trash className="w-4 h-4" />
-                </Button>
-              </TableCell>
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Pattern</TableHead>
+              <TableHead className="w-24">Type</TableHead>
+              <TableHead className="w-24">Amount</TableHead>
+              <TableHead className="w-20">Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {patterns?.map((pattern) => (
+              <TableRow key={pattern.id}>
+                <TableCell className="font-mono">{pattern.pattern}</TableCell>
+                <TableCell>{pattern.pattern_type}</TableCell>
+                <TableCell>{pattern.amount}</TableCell>
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deletePattern.mutate(pattern.id)}
+                  >
+                    <Trash className="w-4 h-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };
