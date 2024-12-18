@@ -21,10 +21,29 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+type PatternType = "regex" | "exact";
+
+interface Pattern {
+  id: string;
+  pattern: string;
+  amount: number;
+  pattern_type: PatternType;
+}
+
+interface NewPattern {
+  pattern: string;
+  amount: string;
+  pattern_type: PatternType;
+}
+
 const USSDPatterns = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [newPattern, setNewPattern] = useState({ pattern: "", amount: "", pattern_type: "regex" });
+  const [newPattern, setNewPattern] = useState<NewPattern>({ 
+    pattern: "", 
+    amount: "", 
+    pattern_type: "regex" 
+  });
 
   const { data: patterns, isLoading } = useQuery({
     queryKey: ["ussd-patterns"],
@@ -35,7 +54,7 @@ const USSDPatterns = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as Pattern[];
     },
   });
 
@@ -125,7 +144,7 @@ const USSDPatterns = () => {
           <label className="text-sm font-medium">Type</label>
           <Select
             value={newPattern.pattern_type}
-            onValueChange={(value) =>
+            onValueChange={(value: PatternType) =>
               setNewPattern((prev) => ({ ...prev, pattern_type: value }))
             }
           >
