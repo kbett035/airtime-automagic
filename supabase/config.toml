@@ -1,1 +1,4 @@
 project_id = "xtntoxbhnlpcpsotltiz"
+
+[functions.process-message]
+verify_jwt = false

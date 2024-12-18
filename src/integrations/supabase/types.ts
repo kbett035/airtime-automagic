@@ -72,6 +72,45 @@ export type Database = {
         }
         Relationships: []
       }
+      ussd_patterns: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          pattern: string
+          pattern_type:
+            | Database["public"]["Enums"]["message_pattern_type"]
+            | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          pattern: string
+          pattern_type?:
+            | Database["public"]["Enums"]["message_pattern_type"]
+            | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          pattern?: string
+          pattern_type?:
+            | Database["public"]["Enums"]["message_pattern_type"]
+            | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -80,6 +119,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      message_pattern_type: "regex" | "exact"
       transaction_status: "pending" | "completed" | "failed"
     }
     CompositeTypes: {
