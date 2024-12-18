@@ -9,7 +9,69 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      bot_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_enabled: boolean | null
+          updated_at: string | null
+          user_id: string | null
+          ussd_format: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+          ussd_format?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+          ussd_format?: string | null
+        }
+        Relationships: []
+      }
+      transaction_logs: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          message_text: string
+          sender_phone: string
+          status: Database["public"]["Enums"]["transaction_status"] | null
+          updated_at: string | null
+          user_id: string | null
+          ussd_string: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          message_text: string
+          sender_phone: string
+          status?: Database["public"]["Enums"]["transaction_status"] | null
+          updated_at?: string | null
+          user_id?: string | null
+          ussd_string: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          message_text?: string
+          sender_phone?: string
+          status?: Database["public"]["Enums"]["transaction_status"] | null
+          updated_at?: string | null
+          user_id?: string | null
+          ussd_string?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +80,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      transaction_status: "pending" | "completed" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
