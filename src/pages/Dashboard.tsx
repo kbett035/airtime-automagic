@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [settings, setSettings] = useState({ is_enabled: false, ussd_format: "" });
+  const [settings, setSettings] = useState({ is_enabled: false, ussd_format: "*544*4*6*{phone}#" });
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,7 +36,7 @@ const Dashboard = () => {
       const { data: settingsData, error: settingsError } = await supabase
         .from("bot_settings")
         .select("*")
-        .single();
+        .maybeSingle();
 
       if (settingsError && settingsError.code !== "PGRST116") {
         console.error("Error fetching settings:", settingsError);
@@ -45,7 +45,31 @@ const Dashboard = () => {
           description: "Failed to load bot settings",
           variant: "destructive",
         });
-      } else if (settingsData) {
+      }
+
+      // If no settings exist, create default settings
+      if (!settingsData) {
+        const { data: newSettings, error: createError } = await supabase
+          .from("bot_settings")
+          .insert([{
+            is_enabled: false,
+            ussd_format: "*544*4*6*{phone}#",
+            user_id: (await supabase.auth.getUser()).data.user?.id
+          }])
+          .select()
+          .single();
+
+        if (createError) {
+          console.error("Error creating settings:", createError);
+          toast({
+            title: "Error",
+            description: "Failed to create default settings",
+            variant: "destructive",
+          });
+        } else if (newSettings) {
+          setSettings(newSettings);
+        }
+      } else {
         setSettings(settingsData);
       }
 
