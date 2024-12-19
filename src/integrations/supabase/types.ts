@@ -84,6 +84,7 @@ export type Database = {
             | null
           updated_at: string | null
           user_id: string | null
+          ussd_format: string
         }
         Insert: {
           amount: number
@@ -96,6 +97,7 @@ export type Database = {
             | null
           updated_at?: string | null
           user_id?: string | null
+          ussd_format?: string
         }
         Update: {
           amount?: number
@@ -108,6 +110,7 @@ export type Database = {
             | null
           updated_at?: string | null
           user_id?: string | null
+          ussd_format?: string
         }
         Relationships: []
       }
