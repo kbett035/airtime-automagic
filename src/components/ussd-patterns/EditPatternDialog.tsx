@@ -8,15 +8,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-
-interface Pattern {
-  id: string;
-  pattern: string;
-  amount: number;
-  pattern_type: "regex" | "exact";
-  ussd_format: string;
-  description?: string;
-}
+import { Pattern } from "@/hooks/useUSSDPatterns";
 
 interface EditPatternDialogProps {
   pattern: Pattern | null;

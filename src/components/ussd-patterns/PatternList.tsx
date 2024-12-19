@@ -8,15 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-interface Pattern {
-  id: string;
-  pattern: string;
-  amount: number;
-  pattern_type: "regex" | "exact";
-  ussd_format: string;
-  description?: string;
-}
+import { Pattern } from "@/hooks/useUSSDPatterns";
 
 interface PatternListProps {
   patterns: Pattern[];

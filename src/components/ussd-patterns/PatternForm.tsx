@@ -3,25 +3,11 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { NewPattern } from "@/hooks/useUSSDPatterns";
 
 interface PatternFormProps {
   onSubmit: (pattern: NewPattern) => void;
-}
-
-export interface NewPattern {
-  pattern: string;
-  amount: string;
-  pattern_type: "regex" | "exact";
-  ussd_format: string;
-  description?: string;
 }
 
 export const PatternForm = ({ onSubmit }: PatternFormProps) => {
