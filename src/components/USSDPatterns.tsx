@@ -1,49 +1,24 @@
 import { useState } from "react";
-import { Plus, Trash } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-
-type PatternType = "regex" | "exact";
+import { PatternForm, NewPattern } from "./ussd-patterns/PatternForm";
+import { PatternList } from "./ussd-patterns/PatternList";
+import { EditPatternDialog } from "./ussd-patterns/EditPatternDialog";
 
 interface Pattern {
   id: string;
   pattern: string;
   amount: number;
-  pattern_type: PatternType;
-}
-
-interface NewPattern {
-  pattern: string;
-  amount: string;
-  pattern_type: PatternType;
+  pattern_type: "regex" | "exact";
+  ussd_format: string;
+  description?: string;
 }
 
 const USSDPatterns = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [newPattern, setNewPattern] = useState<NewPattern>({
-    pattern: "",
-    amount: "",
-    pattern_type: "regex",
-  });
+  const [editingPattern, setEditingPattern] = useState<Pattern | null>(null);
 
   const { data: patterns, isLoading } = useQuery({
     queryKey: ["ussd-patterns"],
@@ -59,25 +34,52 @@ const USSDPatterns = () => {
   });
 
   const addPattern = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (newPattern: NewPattern) => {
       const { error } = await supabase.from("ussd_patterns").insert([
         {
           pattern: newPattern.pattern,
           amount: parseFloat(newPattern.amount),
           pattern_type: newPattern.pattern_type,
+          ussd_format: newPattern.ussd_format,
+          description: newPattern.description,
         },
       ]);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ussd-patterns"] });
-      setNewPattern({ pattern: "", amount: "", pattern_type: "regex" });
       toast({ title: "Success", description: "Pattern added successfully" });
     },
     onError: (error) => {
       toast({
         title: "Error",
         description: "Failed to add pattern: " + error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updatePattern = useMutation({
+    mutationFn: async (pattern: Pattern) => {
+      const { error } = await supabase
+        .from("ussd_patterns")
+        .update({
+          pattern: pattern.pattern,
+          amount: pattern.amount,
+          ussd_format: pattern.ussd_format,
+          description: pattern.description,
+        })
+        .eq("id", pattern.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ussd-patterns"] });
+      toast({ title: "Success", description: "Pattern updated successfully" });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update pattern: " + error.message,
         variant: "destructive",
       });
     },
@@ -101,100 +103,22 @@ const USSDPatterns = () => {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newPattern.pattern || !newPattern.amount) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
-      return;
-    }
-    addPattern.mutate();
-  };
-
   if (isLoading) return <div>Loading patterns...</div>;
 
   return (
-    <div className="space-y-4">
-      <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4">
-        <div className="space-y-2 flex-1">
-          <label className="text-sm font-medium">Pattern</label>
-          <Input
-            value={newPattern.pattern}
-            onChange={(e) =>
-              setNewPattern((prev) => ({ ...prev, pattern: e.target.value }))
-            }
-            placeholder="Enter pattern"
-          />
-        </div>
-        <div className="space-y-2 w-full md:w-32">
-          <label className="text-sm font-medium">Amount</label>
-          <Input
-            type="number"
-            value={newPattern.amount}
-            onChange={(e) =>
-              setNewPattern((prev) => ({ ...prev, amount: e.target.value }))
-            }
-            placeholder="Amount"
-          />
-        </div>
-        <div className="space-y-2 w-full md:w-40">
-          <label className="text-sm font-medium">Type</label>
-          <Select
-            value={newPattern.pattern_type}
-            onValueChange={(value: PatternType) =>
-              setNewPattern((prev) => ({ ...prev, pattern_type: value }))
-            }
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="regex">Regex</SelectItem>
-              <SelectItem value="exact">Exact Match</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex items-end">
-          <Button type="submit" className="w-full md:w-auto">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Pattern
-          </Button>
-        </div>
-      </form>
-
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Pattern</TableHead>
-              <TableHead className="w-24">Type</TableHead>
-              <TableHead className="w-24">Amount</TableHead>
-              <TableHead className="w-20">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {patterns?.map((pattern) => (
-              <TableRow key={pattern.id}>
-                <TableCell className="font-mono">{pattern.pattern}</TableCell>
-                <TableCell>{pattern.pattern_type}</TableCell>
-                <TableCell>{pattern.amount}</TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => deletePattern.mutate(pattern.id)}
-                  >
-                    <Trash className="w-4 h-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+    <div className="space-y-8">
+      <PatternForm onSubmit={(pattern) => addPattern.mutate(pattern)} />
+      <PatternList
+        patterns={patterns || []}
+        onDelete={(id) => deletePattern.mutate(id)}
+        onEdit={(pattern) => setEditingPattern(pattern)}
+      />
+      <EditPatternDialog
+        pattern={editingPattern}
+        isOpen={!!editingPattern}
+        onClose={() => setEditingPattern(null)}
+        onSave={(pattern) => updatePattern.mutate(pattern)}
+      />
     </div>
   );
 };
