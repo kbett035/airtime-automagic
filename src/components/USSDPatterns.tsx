@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +19,17 @@ const USSDPatterns = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [editingPattern, setEditingPattern] = useState<Pattern | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUserId = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        setUserId(session.user.id);
+      }
+    };
+    getUserId();
+  }, []);
 
   const { data: patterns, isLoading } = useQuery({
     queryKey: ["ussd-patterns"],
@@ -31,6 +42,7 @@ const USSDPatterns = () => {
       if (error) throw error;
       return data as Pattern[];
     },
+    enabled: !!userId, // Only fetch when we have the userId
   });
 
   const addPattern = useMutation({
@@ -42,6 +54,7 @@ const USSDPatterns = () => {
           pattern_type: newPattern.pattern_type,
           ussd_format: newPattern.ussd_format,
           description: newPattern.description,
+          user_id: userId, // Add the user_id here
         },
       ]);
       if (error) throw error;
@@ -103,6 +116,7 @@ const USSDPatterns = () => {
     },
   });
 
+  if (!userId) return <div>Loading user...</div>;
   if (isLoading) return <div>Loading patterns...</div>;
 
   return (
