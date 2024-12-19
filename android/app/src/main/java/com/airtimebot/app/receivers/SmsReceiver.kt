@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
 import android.util.Log
+import com.airtimebot.app.services.SmsProcessorService
 
 class SmsReceiver : BroadcastReceiver() {
     private val TAG = "SmsReceiver"
@@ -13,10 +14,16 @@ class SmsReceiver : BroadcastReceiver() {
         if (intent.action == Telephony.Sms.Intents.SMS_RECEIVED_ACTION) {
             val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
             messages?.forEach { message ->
-                if (message.displayMessageBody.contains("M-PESA")) {
-                    Log.d(TAG, "M-Pesa message received")
-                    val serviceIntent = Intent(context, SmsProcessorService::class.java)
-                    serviceIntent.putExtra("sms_body", message.displayMessageBody)
+                val messageBody = message.displayMessageBody
+                Log.d(TAG, "SMS received: $messageBody")
+                
+                if (messageBody.contains("M-PESA") || 
+                    messageBody.contains("Confirmed") || 
+                    messageBody.contains("received")) {
+                    Log.d(TAG, "M-Pesa message detected")
+                    val serviceIntent = Intent(context, SmsProcessorService::class.java).apply {
+                        putExtra("sms_body", messageBody)
+                    }
                     context.startService(serviceIntent)
                 }
             }

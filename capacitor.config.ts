@@ -5,7 +5,8 @@ const config: CapacitorConfig = {
   appName: 'Airtime Bot',
   webDir: 'dist',
   server: {
-    androidScheme: 'https'
+    androidScheme: 'https',
+    cleartext: true
   },
   android: {
     buildOptions: {
@@ -15,7 +16,7 @@ const config: CapacitorConfig = {
     backgroundColor: '#ffffff',
     allowMixedContent: true,
     captureInput: true,
-    webContentsDebuggingEnabled: true
+    webContentsDebuggingEnabled: false
   },
   plugins: {
     Permissions: {

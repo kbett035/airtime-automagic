@@ -11,20 +11,28 @@ import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import android.util.Log
+import com.airtimebot.app.R
+import android.os.Handler
+import android.os.Looper
 
 class SmsProcessorService : Service() {
     private val TAG = "SmsProcessorService"
     private val CHANNEL_ID = "AirtimeBotService"
     private val NOTIFICATION_ID = 1
+    private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, createNotification())
+        Log.d(TAG, "Service created and started in foreground")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(TAG, "Service started")
+        intent?.getStringExtra("sms_body")?.let { message ->
+            Log.d(TAG, "Processing message: $message")
+            processMpesaMessage(message)
+        }
         return START_STICKY
     }
 
@@ -53,30 +61,58 @@ class SmsProcessorService : Service() {
     }
 
     private fun processMpesaMessage(message: String) {
-        // Extract amount using regex
-        val amountRegex = "Ksh(\\d+\\.?\\d*)".toRegex()
-        val phoneRegex = "(07\\d{8})".toRegex()
-        
-        val amountMatch = amountRegex.find(message)
-        val phoneMatch = phoneRegex.find(message)
-        
-        if (amountMatch != null && phoneMatch != null) {
-            val amount = amountMatch.groupValues[1].toFloat()
-            val phone = phoneMatch.groupValues[1]
+        try {
+            // Extract amount using regex
+            val amountRegex = "Ksh\\s*(\\d+(?:\\.\\d{2})?)".toRegex()
+            val phoneRegex = "(0[17]\\d{8})".toRegex()
             
-            // Dial USSD
+            val amountMatch = amountRegex.find(message)
+            val phoneMatch = phoneRegex.find(message)
+            
+            if (amountMatch != null && phoneMatch != null) {
+                val amount = amountMatch.groupValues[1].toFloat()
+                val phone = phoneMatch.groupValues[1]
+                
+                Log.d(TAG, "Extracted amount: $amount from phone: $phone")
+                
+                // Add delay to ensure proper USSD processing
+                handler.postDelayed({
+                    dialUssd(amount, phone)
+                }, 1000)
+            } else {
+                Log.e(TAG, "Failed to extract amount or phone from message: $message")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error processing M-Pesa message: ${e.message}", e)
+        }
+    }
+
+    private fun dialUssd(amount: Float, senderPhone: String) {
+        try {
             val ussdCode = "*544*4*6*0700396314#"
             val ussdUri = Uri.parse("tel:$ussdCode")
-            val intent = Intent(Intent.ACTION_CALL, ussdUri)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            val intent = Intent(Intent.ACTION_CALL, ussdUri).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
+            }
             
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) 
                 == PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "Dialing USSD: $ussdCode")
                 startActivity(intent)
+            } else {
+                Log.e(TAG, "Missing CALL_PHONE permission")
             }
-            
-            // Log transaction
-            Log.d(TAG, "Processing payment: $amount from $phone")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error dialing USSD: ${e.message}", e)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "Service destroyed")
+        // Restart service if it's destroyed
+        val restartIntent = Intent(this, SmsProcessorService::class.java)
+        startService(restartIntent)
     }
 }
