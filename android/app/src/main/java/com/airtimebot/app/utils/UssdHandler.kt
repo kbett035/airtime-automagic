@@ -10,6 +10,8 @@ import android.os.Looper
 import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
+import com.airtimebot.app.services.SmsProcessorService
+import kotlinx.coroutines.*
 
 class UssdHandler(
     private val context: Context,
@@ -17,11 +19,17 @@ class UssdHandler(
 ) {
     private val handler = Handler(Looper.getMainLooper())
     private val TAG = "UssdHandler"
+    private val queue = UssdQueue.getInstance()
+    private val scope = CoroutineScope(Dispatchers.IO + Job())
 
-    fun dialUssdWithRetry(amount: Float, senderPhone: String, retryCount: Int = 0) {
+    fun dialUssdWithRetry(amount: Float, senderPhone: String, messageId: String = "", retryCount: Int = 0) {
+        val request = UssdRequest(amount, senderPhone, messageId, retryCount)
+        queue.enqueue(request)
+        
         try {
             if (retryCount >= 3) {
                 Log.e(TAG, "Max retry attempts reached for USSD dialing")
+                updateTransactionStatus(messageId, "failed")
                 return
             }
 
@@ -38,25 +46,49 @@ class UssdHandler(
                 == PackageManager.PERMISSION_GRANTED) {
                 Log.d(TAG, "Dialing USSD: $ussdCode")
                 context.startActivity(intent)
-
-                handler.postDelayed({
+                
+                // Monitor call state
+                scope.launch {
+                    delay(5000) // Wait for call to complete
                     if (!isUssdCallSuccessful()) {
-                        Log.d(TAG, "USSD call might have failed, retrying... Attempt: ${retryCount + 1}")
-                        dialUssdWithRetry(amount, senderPhone, retryCount + 1)
+                        Log.d(TAG, "USSD call failed, retrying... Attempt: ${retryCount + 1}")
+                        updateTransactionStatus(messageId, "retrying")
+                        dialUssdWithRetry(amount, senderPhone, messageId, retryCount + 1)
+                    } else {
+                        updateTransactionStatus(messageId, "completed")
                     }
-                }, 5000)
+                }
             } else {
                 Log.e(TAG, "Missing CALL_PHONE permission")
+                updateTransactionStatus(messageId, "failed")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error dialing USSD: ${e.message}", e)
             handler.postDelayed({
-                dialUssdWithRetry(amount, senderPhone, retryCount + 1)
+                updateTransactionStatus(messageId, "retrying")
+                dialUssdWithRetry(amount, senderPhone, messageId, retryCount + 1)
             }, 2000)
         }
     }
 
     private fun isUssdCallSuccessful(): Boolean {
         return telephonyManager.callState == TelephonyManager.CALL_STATE_IDLE
+    }
+
+    private fun updateTransactionStatus(messageId: String, status: String) {
+        // Update transaction status in database
+        scope.launch {
+            try {
+                // Update status in Supabase
+                Log.d(TAG, "Updating transaction status: $messageId to $status")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating transaction status: ${e.message}", e)
+            }
+        }
+    }
+
+    fun cleanup() {
+        scope.cancel()
+        queue.clear()
     }
 }

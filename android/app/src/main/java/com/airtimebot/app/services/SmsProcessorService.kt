@@ -10,6 +10,7 @@ import android.util.Log
 import com.airtimebot.app.utils.MessageProcessor
 import com.airtimebot.app.utils.NotificationHelper
 import com.airtimebot.app.utils.UssdHandler
+import kotlinx.coroutines.*
 
 class SmsProcessorService : Service() {
     private val TAG = "SmsProcessorService"
@@ -17,6 +18,7 @@ class SmsProcessorService : Service() {
     private lateinit var ussdHandler: UssdHandler
     private lateinit var messageProcessor: MessageProcessor
     private lateinit var telephonyManager: TelephonyManager
+    private val serviceScope = CoroutineScope(Dispatchers.IO + Job())
 
     override fun onCreate() {
         super.onCreate()
@@ -40,8 +42,18 @@ class SmsProcessorService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         intent?.getStringExtra("sms_body")?.let { message ->
             Log.d(TAG, "Processing message: $message")
-            messageProcessor.processMpesaMessage(message)?.let { processed ->
-                ussdHandler.dialUssdWithRetry(processed.amount, processed.phone)
+            serviceScope.launch {
+                try {
+                    messageProcessor.processMpesaMessage(message)?.let { processed ->
+                        ussdHandler.dialUssdWithRetry(
+                            processed.amount,
+                            processed.phone,
+                            processed.transactionId
+                        )
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error processing message: ${e.message}", e)
+                }
             }
         }
         return START_STICKY
@@ -52,6 +64,8 @@ class SmsProcessorService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "Service destroyed")
+        serviceScope.cancel()
+        
         // Restart service if it's destroyed
         val restartIntent = Intent(this, SmsProcessorService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
