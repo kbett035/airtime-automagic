@@ -16,7 +16,7 @@ const config: CapacitorConfig = {
     backgroundColor: '#ffffff',
     allowMixedContent: true,
     captureInput: true,
-    webContentsDebuggingEnabled: false
+    webContentsDebuggingEnabled: true
   },
   plugins: {
     Permissions: {
