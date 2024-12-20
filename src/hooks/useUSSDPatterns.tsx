@@ -36,11 +36,13 @@ export const useUSSDPatterns = () => {
   }, []);
 
   const { data: patterns, isLoading } = useQuery({
-    queryKey: ["ussd-patterns"],
+    queryKey: ["ussd-patterns", userId],
     queryFn: async () => {
+      if (!userId) return [];
       const { data, error } = await supabase
         .from("ussd_patterns")
         .select("*")
+        .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
