@@ -22,19 +22,19 @@ class NotificationHelper(private val context: Context) {
     fun createNotificationChannel() {
         val serviceChannel = NotificationChannel(
             CHANNEL_ID,
-            "Airtime Bot Service",
+            context.getString(R.string.notification_channel_name),
             NotificationManager.IMPORTANCE_LOW
         ).apply {
-            description = "Background service for processing M-Pesa messages"
+            description = context.getString(R.string.notification_channel_description)
             setShowBadge(false)
         }
         
         val statusChannel = NotificationChannel(
             STATUS_CHANNEL_ID,
-            "Transaction Status",
+            context.getString(R.string.status_channel_name),
             NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
-            description = "Updates about transaction processing"
+            description = context.getString(R.string.status_channel_description)
         }
         
         notificationManager.createNotificationChannel(serviceChannel)
@@ -43,21 +43,23 @@ class NotificationHelper(private val context: Context) {
 
     fun createNotification(): Notification {
         return NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle("Airtime Bot Active")
-            .setContentText("Monitoring for M-Pesa messages")
+            .setContentTitle(context.getString(R.string.service_running))
+            .setContentText(context.getString(R.string.monitoring_messages))
             .setSmallIcon(R.drawable.ic_notification)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
+            .setStyle(NotificationCompat.BigTextStyle())
             .build()
     }
 
     fun showTransactionNotification(message: String, isError: Boolean = false) {
         val notification = NotificationCompat.Builder(context, STATUS_CHANNEL_ID)
-            .setContentTitle(if (isError) "Transaction Failed" else "Transaction Update")
+            .setContentTitle(context.getString(if (isError) R.string.transaction_failed else R.string.transaction_update))
             .setContentText(message)
             .setSmallIcon(R.drawable.ic_notification)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .build()
 
         notificationManager.notify(STATUS_NOTIFICATION_ID, notification)

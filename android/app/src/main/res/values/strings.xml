@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Airtime Bot</string>
+    <string name="notification_channel_name">Airtime Bot Service</string>
+    <string name="notification_channel_description">Background service for processing M-Pesa messages</string>
+    <string name="status_channel_name">Transaction Status</string>
+    <string name="status_channel_description">Updates about transaction processing</string>
+    <string name="service_running">Airtime Bot Active</string>
+    <string name="monitoring_messages">Monitoring for M-Pesa messages</string>
+    <string name="transaction_failed">Transaction Failed</string>
+    <string name="transaction_update">Transaction Update</string>
+</resources>
