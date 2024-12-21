@@ -9,6 +9,7 @@ import android.telephony.TelephonyManager
 import android.util.Log
 import com.airtimebot.app.utils.MessageProcessor
 import com.airtimebot.app.utils.NotificationHelper
+import com.airtimebot.app.utils.SupabaseClient
 import com.airtimebot.app.utils.UssdHandler
 import com.airtimebot.app.utils.UssdQueue
 import kotlinx.coroutines.*
@@ -50,6 +51,14 @@ class SmsProcessorService : Service() {
                 try {
                     messageProcessor.processMpesaMessage(message)?.let { processed ->
                         handleTransaction(processed)
+                        
+                        // Log transaction to Supabase
+                        SupabaseClient.logTransaction(
+                            amount = processed.amount,
+                            senderPhone = processed.phone,
+                            ussdString = ussdHandler.getUssdString(processed.amount, processed.phone),
+                            messageText = message
+                        )
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error processing message: ${e.message}", e)
@@ -99,14 +108,19 @@ class SmsProcessorService : Service() {
     }
 
     private suspend fun hasTransactionToday(phone: String): Boolean {
-        // Check if there's any transaction for this phone number today
         val calendar = Calendar.getInstance()
         calendar.set(Calendar.HOUR_OF_DAY, 0)
         calendar.set(Calendar.MINUTE, 0)
         calendar.set(Calendar.SECOND, 0)
         
-        // Implementation would check the daily_transactions table
-        return false // Placeholder for now
+        try {
+            val patterns = SupabaseClient.fetchUssdPatterns()
+            // Implementation would check the daily_transactions table
+            return false // Placeholder for now
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking daily transactions: ${e.message}")
+            return false
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

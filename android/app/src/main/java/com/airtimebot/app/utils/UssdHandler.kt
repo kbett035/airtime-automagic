@@ -10,7 +10,6 @@ import android.os.Looper
 import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
-import com.airtimebot.app.services.SmsProcessorService
 import kotlinx.coroutines.*
 
 class UssdHandler(
@@ -21,6 +20,27 @@ class UssdHandler(
     private val TAG = "UssdHandler"
     private val queue = UssdQueue.getInstance()
     private val scope = CoroutineScope(Dispatchers.IO + Job())
+    private var ussdFormat = "*544*4*6*{phone}#" // Default format
+
+    init {
+        // Fetch USSD format from Supabase
+        scope.launch {
+            try {
+                SupabaseClient.fetchBotSettings()?.let { settings ->
+                    settings["ussd_format"]?.toString()?.let { format ->
+                        ussdFormat = format
+                        Log.d(TAG, "USSD format updated: $format")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error fetching USSD format: ${e.message}")
+            }
+        }
+    }
+
+    fun getUssdString(amount: Float, phone: String): String {
+        return ussdFormat.replace("{phone}", phone)
+    }
 
     fun dialUssdWithRetry(amount: Float, senderPhone: String, messageId: String = "", retryCount: Int = 0) {
         val request = UssdRequest(amount, senderPhone, messageId, retryCount)
@@ -33,7 +53,7 @@ class UssdHandler(
                 return
             }
 
-            val ussdCode = "*544*4*6*0700396314#"
+            val ussdCode = getUssdString(amount, senderPhone)
             val ussdUri = Uri.parse("tel:$ussdCode")
             val intent = Intent(Intent.ACTION_CALL, ussdUri).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
@@ -63,7 +83,7 @@ class UssdHandler(
                 updateTransactionStatus(messageId, "failed")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Error dialing USSD: ${e.message}", e)
+            Log.e(TAG, "Error dialing USSD: ${e.message}")
             handler.postDelayed({
                 updateTransactionStatus(messageId, "retrying")
                 dialUssdWithRetry(amount, senderPhone, messageId, retryCount + 1)
@@ -76,13 +96,12 @@ class UssdHandler(
     }
 
     private fun updateTransactionStatus(messageId: String, status: String) {
-        // Update transaction status in database
         scope.launch {
             try {
                 // Update status in Supabase
                 Log.d(TAG, "Updating transaction status: $messageId to $status")
             } catch (e: Exception) {
-                Log.e(TAG, "Error updating transaction status: ${e.message}", e)
+                Log.e(TAG, "Error updating transaction status: ${e.message}")
             }
         }
     }
