@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Airtime Bot</string>
-    <string name="notification_channel_name">Airtime Bot Service</string>
-    <string name="notification_channel_description">Background service for processing M-Pesa messages</string>
-    <string name="status_channel_name">Transaction Status</string>
-    <string name="status_channel_description">Updates about transaction processing</string>
-    <string name="service_running">Airtime Bot Active</string>
-    <string name="monitoring_messages">Monitoring for M-Pesa messages</string>
-    <string name="transaction_failed">Transaction Failed</string>
+    <string name="notification_channel_name">Service Status</string>
+    <string name="notification_channel_description">Shows the status of the SMS monitoring service</string>
+    <string name="status_channel_name">Transaction Updates</string>
+    <string name="status_channel_description">Shows updates about ongoing transactions</string>
+    <string name="error_channel_name">Transaction Errors</string>
+    <string name="error_channel_description">Shows errors that occur during transactions</string>
+    <string name="service_running">Airtime Bot is running</string>
+    <string name="monitoring_messages">Monitoring incoming messages</string>
     <string name="transaction_update">Transaction Update</string>
+    <string name="transaction_failed">Transaction Failed</string>
+    <string name="transaction_scheduled">Transaction Scheduled</string>
+    <string name="error_network">Network error occurred</string>
+    <string name="error_timeout">Operation timed out</string>
+    <string name="error_unknown">An unknown error occurred</string>
 </resources>

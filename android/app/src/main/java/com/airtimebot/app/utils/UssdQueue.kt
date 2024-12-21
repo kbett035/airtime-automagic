@@ -17,7 +17,8 @@ data class UssdRequest(
 class UssdQueue private constructor() {
     private val queue = ConcurrentLinkedQueue<UssdRequest>()
     private val isProcessing = AtomicBoolean(false)
-    private val scope = CoroutineScope(Dispatchers.IO + Job())
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var processingJob: Job? = null
     
     companion object {
         private const val TAG = "UssdQueue"
@@ -39,27 +40,28 @@ class UssdQueue private constructor() {
 
     private fun processQueue() {
         if (isProcessing.compareAndSet(false, true)) {
-            scope.launch {
+            processingJob = scope.launch {
                 try {
                     while (queue.isNotEmpty()) {
-                        val request = queue.peek() // Just peek, don't remove yet
+                        val request = queue.peek()
                         
                         request?.let {
                             val currentTime = System.currentTimeMillis()
                             val scheduledTime = request.scheduledTime?.time ?: currentTime
                             
                             if (currentTime >= scheduledTime) {
-                                queue.poll() // Now remove it
+                                queue.poll()
                                 Log.d(TAG, "Processing request: $it")
                                 // Process the request
                                 delay(2000) // Add delay between USSD calls
                             } else {
-                                // Wait until scheduled time
                                 val waitTime = scheduledTime - currentTime
                                 delay(waitTime)
                             }
                         }
                     }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error processing queue: ${e.message}")
                 } finally {
                     isProcessing.set(false)
                     if (queue.isNotEmpty()) {
@@ -71,7 +73,11 @@ class UssdQueue private constructor() {
     }
 
     fun clear() {
+        processingJob?.cancel()
         queue.clear()
-        scope.cancel()
+        scope.coroutineContext.cancelChildren()
+        Log.d(TAG, "Queue cleared and processing stopped")
     }
+
+    fun size(): Int = queue.size
 }
