@@ -36,6 +36,39 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          scheduled_for: string | null
+          sender_phone: string
+          status: Database["public"]["Enums"]["scheduled_status"] | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          scheduled_for?: string | null
+          sender_phone: string
+          status?: Database["public"]["Enums"]["scheduled_status"] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          scheduled_for?: string | null
+          sender_phone?: string
+          status?: Database["public"]["Enums"]["scheduled_status"] | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       transaction_logs: {
         Row: {
           amount: number
@@ -126,6 +159,7 @@ export type Database = {
     }
     Enums: {
       message_pattern_type: "regex" | "exact"
+      scheduled_status: "pending" | "scheduled" | "completed"
       transaction_status: "pending" | "completed" | "failed"
     }
     CompositeTypes: {
