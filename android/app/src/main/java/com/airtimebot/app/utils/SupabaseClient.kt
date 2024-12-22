@@ -3,7 +3,7 @@ package com.airtimebot.app.utils
 import android.util.Log
 import com.airtimebot.app.BuildConfig
 import io.github.jan.supabase.createSupabaseClient
-import io.github.jan.supabase.gotrue.GoTrue
+import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.postgrest.Postgrest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
@@ -18,7 +18,7 @@ object SupabaseClient {
         supabaseUrl = BuildConfig.SUPABASE_URL,
         supabaseKey = BuildConfig.SUPABASE_ANON_KEY
     ) {
-        install(GoTrue)
+        install(Auth)
         install(Postgrest)
     }
 
