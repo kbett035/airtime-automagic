@@ -2,13 +2,18 @@ package com.airtimebot.app.utils
 
 import android.util.Log
 import com.airtimebot.app.BuildConfig
+import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.query.PostgrestResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 object SupabaseClient {
     private const val TAG = "SupabaseClient"
@@ -25,9 +30,9 @@ object SupabaseClient {
     suspend fun fetchBotSettings(): Map<String, Any>? = withContext(Dispatchers.IO) {
         try {
             withTimeout(TIMEOUT_MS) {
-                val response = client.postgrest["bot_settings"].select()
-                Log.d(TAG, "Bot settings fetched successfully")
-                response.decodeSingle<Map<String, Any>>()
+                val response: PostgrestResult = client.postgrest["bot_settings"].select()
+                val result = response.decodeList<JsonObject>().firstOrNull()
+                result?.let { convertJsonObjectToMap(it) }
             }
         } catch (e: TimeoutCancellationException) {
             Log.e(TAG, "Timeout fetching bot settings")
@@ -41,9 +46,9 @@ object SupabaseClient {
     suspend fun fetchUssdPatterns(): List<Map<String, Any>>? = withContext(Dispatchers.IO) {
         try {
             withTimeout(TIMEOUT_MS) {
-                val response = client.postgrest["ussd_patterns"].select()
-                Log.d(TAG, "USSD patterns fetched successfully")
-                response.decodeList<Map<String, Any>>()
+                val response: PostgrestResult = client.postgrest["ussd_patterns"].select()
+                val results = response.decodeList<JsonObject>()
+                results.map { convertJsonObjectToMap(it) }
             }
         } catch (e: TimeoutCancellationException) {
             Log.e(TAG, "Timeout fetching USSD patterns")
@@ -63,13 +68,13 @@ object SupabaseClient {
     ): Boolean = withContext(Dispatchers.IO) {
         try {
             withTimeout(TIMEOUT_MS) {
-                val data = mapOf(
-                    "amount" to amount,
-                    "sender_phone" to senderPhone,
-                    "ussd_string" to ussdString,
-                    "message_text" to messageText,
-                    "status" to status
-                )
+                val data = buildJsonObject {
+                    put("amount", amount)
+                    put("sender_phone", senderPhone)
+                    put("ussd_string", ussdString)
+                    put("message_text", messageText)
+                    put("status", status)
+                }
                 
                 client.postgrest["transaction_logs"].insert(data)
                 Log.d(TAG, "Transaction logged successfully")
@@ -90,8 +95,11 @@ object SupabaseClient {
     ): Boolean = withContext(Dispatchers.IO) {
         try {
             withTimeout(TIMEOUT_MS) {
+                val data = buildJsonObject {
+                    put("status", status)
+                }
                 client.postgrest["transaction_logs"]
-                    .update({ "status" to status })
+                    .update(data)
                     .eq("id", transactionId)
                 Log.d(TAG, "Transaction status updated successfully")
                 true
@@ -102,6 +110,17 @@ object SupabaseClient {
         } catch (e: Exception) {
             Log.e(TAG, "Error updating transaction status: ${e.message}")
             false
+        }
+    }
+
+    private fun convertJsonObjectToMap(jsonObject: JsonObject): Map<String, Any> {
+        return jsonObject.entries.associate { (key, value) ->
+            key to when {
+                value.isString -> value.toString()
+                value.isNumber -> value.toString().toDoubleOrNull() ?: value.toString()
+                value.isBoolean -> value.toString().toBoolean()
+                else -> value.toString()
+            }
         }
     }
 }
